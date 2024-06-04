@@ -42,7 +42,13 @@ export class Pixel {
     return jwt;
   }
 
-  async track(user: TokenPayload, event: string, data?: any) {
+  async track(
+    event: string,
+    { user, data }: { user?: TokenPayload; data?: any },
+  ) {
+    if (!user) {
+      user = { email: 'anonymous' };
+    }
     this.adapter.saveEvent(user, event, data);
     this.adapter.saveUser(user);
   }
@@ -145,10 +151,10 @@ export function handlers(pixel: Pixel) {
         case 'track':
           if (id) {
             const { email, userId, name, image } = await verifyToken(id);
-            pixel.track({ email, userId, name, image }, event, data);
+            pixel.track(event, { user: { email, userId, name, image }, data });
           } else {
             // If the user has not been identified yet
-            pixel.track({ email: 'anon' }, event, data);
+            pixel.track(event, { data });
           }
           break;
         case 'identify':
