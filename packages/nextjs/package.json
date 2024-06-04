@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsc",
     "build": "tsc && babel ./src --out-dir dist --extensions \".ts,.tsx\" --copy-files",
+    "build:sdk": "tsc && babel ./src --out-dir dist --extensions \".ts,.tsx\" --copy-files",
     "package:publish": "npx yarn build && npm publish --access public"
   },
   "keywords": [],

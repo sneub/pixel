@@ -155,13 +155,11 @@ export function handlers(pixel: Pixel) {
             // If the user has not been identified yet
             pixel.track(event, { data });
           }
-          break;
+          return NextResponse.json({ status: 'OK' });
         case 'identify':
-          await pixel.identify(data);
-          break;
+          const jwt = await pixel.identify(data);
+          return NextResponse.json({ status: 'OK', jwt });
       }
-
-      return NextResponse.json({ status: 'OK' });
     },
   };
 }
