@@ -42,10 +42,9 @@ export class Pixel {
     return jwt;
   }
 
-  async track(
-    event: string,
-    { user, data }: { user?: TokenPayload; data?: any },
-  ) {
+  async track(event: string, optional?: { user?: TokenPayload; data?: any }) {
+    let { user, data } = optional || { user: undefined, data: undefined };
+
     if (!user) {
       user = { email: 'anonymous' };
     }
