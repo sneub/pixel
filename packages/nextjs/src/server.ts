@@ -68,12 +68,41 @@ export class PrismaAdapter extends Adapter {
     this.prismaClient = prismaClient;
   }
 
-  async saveEvent() {
-    // save the event to the database
+  async saveEvent(user: TokenPayload, event: string, data?: any) {
+    await this.prismaClient.event.create({
+      data: {
+        event,
+        data,
+        user: {
+          connectOrCreate: {
+            where: { email: user.email },
+            create: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              data: user.data,
+            },
+          },
+        },
+      },
+    });
   }
 
-  async saveUser() {
-    // save the user to the database
+  async saveUser(user: TokenPayload) {
+    await this.prismaClient.user.upsert({
+      where: { email: user.email },
+      update: {
+        name: user.name,
+        image: user.image,
+        data: user.data,
+      },
+      create: {
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        data: user.data,
+      },
+    });
   }
 }
 
