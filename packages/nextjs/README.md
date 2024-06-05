@@ -1,10 +1,10 @@
 # Pixel Analytics
 
 Pixel is an open source analytics library for NextJS applications. It is designed to be
-embedded in your application, so that you can get the most accurate events data, while
-fully avoiding the use of cookies.
-
-Pixel also integrates neatly with AuthJS to seamlessly identify your users.
+embedded in your NextJS application, so that you can get the most accurate events data.
+All events are sent to your own domain -- not a third-party address -- allowing
+you to neatly integrate with authentication, avoid using cookies, keep user data safe,
+and bypass browser blockers too.
 
 ## Get started
 
@@ -53,11 +53,11 @@ export default new Pixel({
 
 Currently Pixel supports sending events to:
 
-- Redis
-- BigQuery
 - [Prisma](https://prisma.io)
 - [June](https://june.so)
-- Local file system ([JSONL](https://jsonlines.org/))
+- Local file system ([JSONL](https://jsonlines.org/)) (coming soon)
+- Redis (coming soon)
+- BigQuery (coming soon)
 
 But it is also extremely easy to build your own adapter. Simply take a look at the existing ones and it should be pretty clear.
 
