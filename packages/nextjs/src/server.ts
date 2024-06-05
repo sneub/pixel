@@ -42,14 +42,25 @@ export class Pixel {
     return jwt;
   }
 
-  async track(event: string, optional?: { user?: TokenPayload; data?: any }) {
-    let { user, data } = optional || { user: undefined, data: undefined };
+  async track(
+    event: string,
+    anonymousId?: string,
+    optional?: { user?: TokenPayload; data?: any },
+  ) {
+    let { user, data } = optional || {
+      user: undefined,
+      anonymousId: undefined,
+      data: undefined,
+    };
 
-    if (!user) {
-      user = { email: 'anonymous' };
+    if (user) {
+      user = { ...user, anonymousId };
+      this.adapter.saveUser(user);
+    } else {
+      // Add this fallback for anonymous server-side events
+      user = { anonymousId: anonymousId || '0' };
     }
     this.adapter.saveEvent(user, event, data);
-    this.adapter.saveUser(user);
   }
 }
 
@@ -140,6 +151,16 @@ export class RedisAdapter extends Adapter {
   }
 }
 
+// https://www.june.so/docs/tracking/server/node-js
+interface JuneEventPayload {
+  userId?: string;
+  anonymousId?: string;
+  event: string;
+  properties?: any;
+  timestamp?: string;
+  context?: any;
+}
+
 export class JuneAdapter extends Adapter {
   private juneClient: any;
 
@@ -148,12 +169,32 @@ export class JuneAdapter extends Adapter {
     this.juneClient = juneClient;
   }
 
-  async saveEvent() {
-    // save the event to June
+  async saveEvent(user: TokenPayload, event: string, properties?: any) {
+    const eventPayload: JuneEventPayload = {
+      // Using email as a fallback because AuthJS does
+      // not provide a userId by default in the session object
+      userId: user.userId || user.email,
+      anonymousId: user.anonymousId,
+      event,
+      properties,
+    };
+
+    this.juneClient.track(eventPayload);
   }
 
-  async saveUser() {
-    // save the user to the database
+  async saveUser(user: TokenPayload) {
+    const { userId, email, name, image, ...other } = user;
+    this.juneClient.identify({
+      // Using email as a fallback because AuthJS does
+      // not provide a userId by default in the session object
+      userId: userId || email,
+      traits: {
+        email: email,
+        name: name,
+        avatar: image,
+        ...other,
+      },
+    });
   }
 }
 
@@ -172,17 +213,20 @@ export class ConsoleAdapter extends Adapter {
 export function handlers(pixel: Pixel) {
   return {
     POST: async (request: NextRequest) => {
-      const { id, action, event, data } =
+      const { id, anonymousId, action, event, data } =
         (await request.json()) as HandlerPayload;
 
       switch (action) {
         case 'track':
           if (id) {
             const { email, userId, name, image } = await verifyToken(id);
-            pixel.track(event, { user: { email, userId, name, image }, data });
+            pixel.track(event, anonymousId, {
+              user: { email, userId, name, image },
+              data,
+            });
           } else {
             // If the user has not been identified yet
-            pixel.track(event, { data });
+            pixel.track(event, anonymousId, { data });
           }
           return NextResponse.json({ status: 'OK' });
         case 'identify':
@@ -195,6 +239,7 @@ export function handlers(pixel: Pixel) {
 
 interface HandlerPayload {
   id: string;
+  anonymousId: string;
   action: string;
   event: string;
   data?: any;

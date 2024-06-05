@@ -1,8 +1,9 @@
 import { importJWK, JWK, SignJWT, jwtVerify } from 'jose';
 
 export interface TokenPayload {
-  email: string;
+  email?: string;
   userId?: string;
+  anonymousId?: string;
   name?: string;
   image?: string;
   data?: any;

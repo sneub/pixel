@@ -3,8 +3,11 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 
+const random = () => Math.floor(Math.random() * 10000000000) + Date.now();
+
 const DEFAULT_EVENTS_PATH = '/api/events';
 const JWT_STORAGE_KEY = 'pixel-jwt';
+const PIXEL_ANON_ID_KEY = 'pixel-anon-id';
 
 interface PixelProviderProps {
   children: React.ReactNode;
@@ -89,12 +92,25 @@ export const PixelProvider: React.FC<PixelProviderProps> = ({
 
   const forget = (): void => {
     storage.delete(JWT_STORAGE_KEY);
+    storage.delete(PIXEL_ANON_ID_KEY);
     log.normal('Session ended');
   };
 
   const track = async (event: any, data?: any) => {
     log.normal('Track event:', event, data);
     const jwt = storage.get(JWT_STORAGE_KEY);
+    let anonymousId;
+
+    if (!jwt) {
+      const anonId = storage.get(PIXEL_ANON_ID_KEY);
+
+      if (anonId) {
+        anonymousId = anonId;
+      } else {
+        anonymousId = random();
+        storage.set(PIXEL_ANON_ID_KEY, anonymousId);
+      }
+    }
 
     await fetch(`${window.location.origin}/${eventsPath}`, {
       method: 'POST',
@@ -103,6 +119,7 @@ export const PixelProvider: React.FC<PixelProviderProps> = ({
       },
       body: JSON.stringify({
         id: jwt,
+        anonymousId,
         action: 'track',
         event,
         data,
